@@ -5,7 +5,7 @@ with
     customers as
     (
         select *
-        from {{ source("jaffle_shop", "customers") }}
+        from {{ ref('stg_jaffle_shop__customers') }}
     ),
 
     orders as
@@ -46,13 +46,14 @@ with
             orders.status as order_status,
             completed_payments.total_amount_paid as total_amount_paid,
             completed_payments.payment_finalized_date,
-            customers.first_name as customer_first_name,
-            customers.last_name as customer_last_name
+            customers.customer_first_name,
+            customers.customer_last_name
 
         from orders as orders
         left join completed_payments
                 on orders.id = completed_payments.order_id
-        left join customers on orders.user_id = customers.id
+        left join customers
+                on orders.user_id = customers.customer_id
     ),
 
 
@@ -61,14 +62,14 @@ with
 
     (
         select
-            customers.id as customer_id,
+            customers.customer_id,
             min(order_date) as first_order_date,
             max(order_date) as most_recent_order_date,
             count(orders.id) as number_of_orders
 
         from customers
         left join
-            orders on orders.user_id = customers.id
+            orders on orders.user_id = customers.customer_id
         group by 1
     ),
 
